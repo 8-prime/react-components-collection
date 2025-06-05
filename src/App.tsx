@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router'
 import Home from './pages/Home'
 import Demo from './pages/Demo'
+import SolariTime from './pages/SolariTime'
 
 function App() {
   return (
@@ -8,6 +9,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/demo" element={<Demo />} />
+        <Route path="/solari-time" element={<SolariTime />} />
       </Routes>
     </BrowserRouter>
   )
