@@ -1,134 +1,127 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
-type SolariProps = {
+type SolariFlapProps = {
     flaps: string[] // all the available values to be displayed
     current: number // index of the current value
+    variant: 'top' | 'bottom';
+    animationDuration: number;
 }
 
-const animationDuration = 200;
 
-function SolariTop({ flaps, current }: SolariProps) {
-    const currentLetter = flaps[current];
-    const nextLetter = flaps[(current + 1) % flaps.length];
+function SolariTop({ flaps, current, animationDuration }: SolariFlapProps) {
+    const [last, setLast] = useState(-1); // last letter	
+    const [changed, setChanged] = useState(false); // has the letter changed
 
-    const [isTransitioning, setIsTransitioning] = useState(false);
-    const [stage, setStage] = useState(0);
 
-    const isFirstRender = useRef(true);
-
-    const transform = (stage: number) => {
-        switch (stage) {
-            case 0:
-                return 'rotateX(-90deg)';
-            case 1:
-                return 'rotateX(0deg)';
-            default:
-                return 'rotateX(-90deg)';
-        }
-    };
+    const [previousLetter, setPreviousLetter] = useState("");
+    const [currentLetter, setCurrentLetter] = useState("");
 
     useEffect(() => {
-        console.log("running use effect: " + isFirstRender.current);
-        if (isFirstRender.current) {
-            isFirstRender.current = false;
+        if (current != last) {
+            setLast(current);
+            setPreviousLetter(flaps[(flaps.length + current - 1) % flaps.length]);
+            setCurrentLetter(flaps[current]);
+
+            setChanged(true);
+            setTimeout(() => {
+                setChanged(false);
+            }, animationDuration);
             return;
         }
-        console.log("running use effect: " + isFirstRender.current);
 
 
-        setIsTransitioning(false);
-        setStage(0);
-        const timeout = setTimeout(() => {
-            setIsTransitioning(true);
-            setStage(1);
-        }, animationDuration * 2);
 
-        return () => {
-            clearTimeout(timeout);
-        }
-    }, [flaps, current])
+    }, [current]);
 
     return (
         <div className="grid text-white text-5xl">
-            <div
-                className="col-start-1 row-start-1 w-32 h-16 overflow-hidden transition-transform duration-100 ease-in-out bg-neutral-700 rounded-t-lg"
-            >
-                <div className="text-8xl font-bold text-white leading-none flex items-start justify-center h-32 ">
+            <div className='col-start-1 row-start-1 w-32 h-16 overflow-hidden transition-transform duration-100 ease-in-out bg-neutral-700 rounded-t-lg'>
+                <div className='text-8xl font-bold text-white leading-none flex items-start justify-center h-32 translate-y-[8%]'>
                     {currentLetter}
                 </div>
             </div>
             <div
-                className={`col-start-1 row-start-1 w-32 h-16 overflow-hidden bg-neutral-700 rounded-t-lg z-10 ${isTransitioning ? `transition-transform duration-${animationDuration} ease-in-out` : ''}`}
+                className={`col-start-1 row-start-1 w-32 h-16 overflow-hidden bg-neutral-700 rounded-t-lg z-10 ${changed ? `transition-transform duration-${animationDuration} ease-in-out` : ''}`}
                 style={{
-                    transform: transform(stage),
+                    transform: 'rotateX(-90deg)',
                     transformStyle: 'preserve-3d',
                     transformOrigin: 'bottom center'
                 }}
             >
-                <div className="text-8xl font-bold text-white leading-none flex items-start justify-center h-32 ">
-                    {nextLetter}
+                <div className={`text-8xl font-bold text-white leading-none flex items-start justify-center h-32 translate-y-[8%]`}>
+                    {previousLetter}
                 </div>
             </div>
         </div>
     )
 }
 
-function SolariBottom({ flaps, current }: SolariProps) {
-    const currentLetter = flaps[current];
-    const nextLetter = flaps[(current + 1) % flaps.length];
+function SolariBottom({ flaps, current, animationDuration }: SolariFlapProps) {
+    const [last, setLast] = useState(-1); // last letter	
+    const [changed, setChanged] = useState(false); // has the letter changed
 
-    const [isTransitioning, setIsTransitioning] = useState(false);
+
+    const [nextLetter, setNextLetter] = useState("");
+    const [currentLetter, setCurrentLetter] = useState("");
+
+
     const [stage, setStage] = useState(0);
 
-    const isFirstRender = useRef(true);
+    function transform(stage: number) {
+        return `rotateX(${stage * 90}deg)`;
+    }
 
     useEffect(() => {
-        if (isFirstRender.current) {
-            isFirstRender.current = false;
+        function handleKeyDown(e: KeyboardEvent) {
+            if (e.code === 'ArrowLeft') {
+                setStage(stage => stage - 1);
+            }
+            if (e.code === 'ArrowRight') {
+                setStage(stage => stage + 1);
+            }
+        }
+
+        document.addEventListener('keydown', handleKeyDown);
+
+        // Don't forget to clean up
+        return function cleanup() {
+            document.removeEventListener('keydown', handleKeyDown);
+        }
+    }, [])
+
+    useEffect(() => {
+        if (current != last) {
+            setLast(current);
+            setNextLetter(flaps[(current + 1) % flaps.length]);
+            setCurrentLetter(flaps[current]);
+
+            setChanged(true);
+            setTimeout(() => {
+                setChanged(false);
+            }, animationDuration);
             return;
         }
 
-        setIsTransitioning(false);
-        setStage(0);
-        const interval = setInterval(() => {
-            setIsTransitioning(true);
-            setStage(1);
-        }, animationDuration);
 
-        return () => {
-            clearInterval(interval);
-        }
-    }, [flaps, current])
 
-    const transform = (stage: number) => {
-        switch (stage) {
-            case 0:
-                return 'rotateX(0deg)';
-            case 1:
-                return 'rotateX(90deg)';
-            default:
-                return 'rotateX(-90deg)';
-        }
-    };
+    }, [current]);
 
     return (
         <div className="grid text-white text-5xl">
-            <div
-                className="col-start-1 row-start-1 w-32 h-16 overflow-hidden ease-in-out bg-neutral-700 rounded-b-lg"
-            >
-                <div className="text-8xl font-bold text-white leading-none flex items-start justify-center h-32 -translate-y-1/2">
+            <div className='col-start-1 row-start-1 w-32 h-16 overflow-hidden bg-neutral-700 rounded-b-lg'>
+                <div className='text-8xl font-bold text-white leading-none flex items-start justify-center h-32 -translate-y-[45%]'>
                     {nextLetter}
                 </div>
             </div>
             <div
-                className={`col-start-1 row-start-1 w-32 h-16 overflow-hidden bg-neutral-700 rounded-b-lg z-10 ${isTransitioning ? `transition-transform duration-${animationDuration} ease-in-out` : ''}`}
+                className={`col-start-1 row-start-1 w-32 h-16 overflow-hidden bg-neutral-700 rounded-b-lg z-10 transition-transform duration-${animationDuration}`}
                 style={{
                     transform: transform(stage),
                     transformStyle: 'preserve-3d',
                     transformOrigin: 'top center'
                 }}
             >
-                <div className="text-8xl font-bold text-white leading-none flex items-start justify-center -translate-y-1/2 h-32 ">
+                <div className={`text-8xl font-bold text-white leading-none flex items-start justify-center h-32 -translate-y-[45%]`}>
                     {currentLetter}
                 </div>
             </div>
@@ -137,39 +130,141 @@ function SolariBottom({ flaps, current }: SolariProps) {
 }
 
 
-export default function SolariTime() {
+function SolariFlap({ flaps, current, variant, animationDuration }: SolariFlapProps) {
 
-    const alphabet = "0123456789".split("");
-    const [current, setCurrent] = useState(0);
+    const currentLetter = flaps[current]; // current letter
+    const [last, setLast] = useState(-1); // last letter	
+    const [changed, setChanged] = useState(false); // has the letter changed
 
-    const reset = () => {
-        setCurrent(0);
-    }
+    const isTop = variant === 'top';
+    const roundedClass = isTop ? 'rounded-t-lg' : 'rounded-b-lg';
+    const transformOrigin = isTop ? 'bottom center' : 'top center';
+    const textTransform = isTop ? 'translate-y-[8%]' : '-translate-y-[45%]';
 
 
-    const [paused, setPaused] = useState(false);
 
-    // useEffect(() => {
-    //     if (paused) return;
-    //     const inter = setInterval(() => {
-    //         setCurrent((c) => (c + 1) % alphabet.length);
-    //     }, 1000);
-    //     return () => {
-    //         clearInterval(inter);
-    //     }
-    // }, [paused])
+    useEffect(() => {
+        if (current != last) {
+            setLast(current);
+
+            setChanged(true);
+            setTimeout(() => {
+                setChanged(false);
+            }, animationDuration);
+        }
+    }, [current]);
+
+    return (
+        <div className={`${changed ? 'border-black' : 'border-amber-400'} border-2 w-32 h-16 overflow-hidden transition-transform duration-100 ease-in-out ${roundedClass}`}>
+            <p>Current:{currentLetter}</p>
+        </div>
+        // <div className="grid text-white text-5xl">
+        //     <div className={`col-start-1 row-start-1 w-32 h-16 overflow-hidden transition-transform duration-100 ease-in-out bg-neutral-700 ${roundedClass}`}>
+        //         <div className={`text-8xl font-bold text-white leading-none flex items-start justify-center h-32 ${textTransform}`}>
+        //             {isTop ? currentLetter : nextLetter}
+        //         </div>
+        //     </div>
+        //     <div
+        //         className={`col-start-1 row-start-1 w-32 h-16 overflow-hidden bg-neutral-700 ${roundedClass} z-10 ${isTransitioning ? `transition-transform duration-${animationDuration} ease-in-out` : ''}`}
+        //         style={{
+        //             transform: transform(stage),
+        //             transformStyle: 'preserve-3d',
+        //             transformOrigin: transformOrigin
+        //         }}
+        //     >
+        //         <div className={`text-8xl font-bold text-white leading-none flex items-start justify-center h-32 ${textTransform}`}>
+        //             {isTop ? nextLetter : currentLetter}
+        //         </div>
+        //     </div>
+        // </div>
+    );
+}
+
+type SolariProps = {
+    flaps: string[];
+    input: string;
+    animationDuration: number;
+}
+
+function Solari({ flaps, input, animationDuration }: SolariProps) {
+
+    const chars = input.split("");
 
 
     return (
-        // <HingeRotateDiv />
-        <div className="min-h-screen flex flex-col  items-center justify-evenly text-white bg-neutral-950">
-            <div className="flex flex-col">
-                <SolariTop current={current} flaps={alphabet} />
-                <hr className="h-0.5 m-0 p-0 border-t-0 bg-neutral-950" />
-                <SolariBottom current={current} flaps={alphabet} />
+        <div className="flex flex-row gap-4">
+            {chars.map((c, i) => {
+                return (
+                    <div key={c + i} className="flex flex-col">
+                        <SolariTop variant="top" current={flaps.indexOf(c)} flaps={flaps} animationDuration={animationDuration} />
+                        <hr className="h-1 m-0 p-0 border-t-0 bg-neutral-950" />
+                        <SolariBottom variant="bottom" current={flaps.indexOf(c)} flaps={flaps} animationDuration={animationDuration} />
+                    </div>
+                )
+            })}
+        </div>
+
+    )
+}
+
+export default function SolariTime() {
+
+    const alphabet = "0123456789".split("");
+
+    const [hours, setHours] = useState("");
+    const [minutes, setMinutes] = useState("");
+    const [seconds, setSeconds] = useState("");
+
+    const [play, setPlay] = useState(true);
+
+
+    useEffect(() => {
+        function handleKeyDown(e: KeyboardEvent) {
+            console.log(e);
+
+            if (e.key === 'p') {
+                setPlay(play => !play);
+            }
+        }
+
+        document.addEventListener('keydown', handleKeyDown);
+
+        // Don't forget to clean up
+        return function cleanup() {
+            document.removeEventListener('keydown', handleKeyDown);
+        }
+    }, [])
+
+    useEffect(() => {
+        if (!play) {
+            return;
+        }
+        const dateObject = new Date()
+
+        setHours(dateObject.getHours().toString().padStart(2, '0'))
+        setMinutes(dateObject.getMinutes().toString().padStart(2, '0'))
+        setSeconds(dateObject.getSeconds().toString().padStart(2, '0'))
+
+        const int = setInterval(() => {
+            const dateObject = new Date()
+
+            setHours(dateObject.getHours().toString().padStart(2, '0'))
+            setMinutes(dateObject.getMinutes().toString().padStart(2, '0'))
+            setSeconds(dateObject.getSeconds().toString().padStart(2, '0'))
+        }, 1000)
+
+        return () => clearInterval(int);
+    }, [play])
+
+    return (
+        <div className="min-h-screen flex flex-col  items-center justify-center text-white bg-neutral-950">
+            <div className="flex flex-row items-center gap-1">
+                <Solari flaps={alphabet} input={hours} animationDuration={200} />
+                <p className="text-5xl">:</p>
+                <Solari flaps={alphabet} input={minutes} animationDuration={200} />
+                <p className="text-5xl">:</p>
+                <Solari flaps={alphabet} input={seconds} animationDuration={200} />
             </div>
-            <button className="bg-neutral-900 px-4 py-2 rounded-lg shadow-lg" onClick={() => reset()}>Reset</button>
-            <button className="bg-neutral-900 px-4 py-2 rounded-lg shadow-lg" onClick={() => setPaused(!paused)}>Pause</button>
         </div >
     );
 }
